@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Force Western/Latin digits (0-9) everywhere — even inside RTL Kurdish text.
+ * This @font-face maps ONLY the digit code points to a Latin system font, so
+ * numbers always render as 0123456789 instead of Eastern-Arabic (٠١٢٣).
+ * All non-digit glyphs fall through to Vazirmatn (next in the font stack).
+ */
+@font-face {
+  font-family: 'LatinDigits';
+  src: local('Segoe UI'), local('Arial'), local('Helvetica Neue'), local('Roboto'),
+    local('San Francisco');
+  unicode-range: U+0030-0039;
+}
+
+/*
+ * NRT — a Kurdish (Sorani) font, self-hosted from public/fonts in two weights.
+ * WOFF2 first (re-serialized so the browser's font sanitizer accepts it — the
+ * original .ttf files carried a DSIG table that made some browsers silently
+ * reject them and fall back to a system font); .ttf kept as a fallback.
+ */
+@font-face {
+  font-family: 'NRT';
+  src: url('/fonts/NRT-Reg.woff2') format('woff2'),
+    url('/fonts/NRT-Reg.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NRT';
+  src: url('/fonts/NRT-Bd.woff2') format('woff2'),
+    url('/fonts/NRT-Bd.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * Accent color themes. Each sets the --brand-* scale (stored as "R G B"
+ * channels). AppContext writes data-theme on <html>; the default is purple.
+ * These work independently of light/dark mode.
+ */
+:root,
+[data-theme='purple'] {
+  --brand-50: 246 242 255;
+  --brand-100: 237 230 255;
+  --brand-200: 220 202 255;
+  --brand-300: 196 166 255;
+  --brand-400: 168 123 255;
+  --brand-500: 139 92 246;
+  --brand-600: 124 77 219;
+  --brand-700: 106 63 192;
+}
+[data-theme='pink'] {
+  --brand-50: 253 242 248;
+  --brand-100: 252 231 243;
+  --brand-200: 251 207 232;
+  --brand-300: 249 168 212;
+  --brand-400: 244 114 182;
+  --brand-500: 236 72 153;
+  --brand-600: 219 39 119;
+  --brand-700: 190 24 93;
+}
+[data-theme='darkpink'] {
+  --brand-50: 255 241 242;
+  --brand-100: 255 228 230;
+  --brand-200: 254 205 211;
+  --brand-300: 253 164 175;
+  --brand-400: 251 113 133;
+  --brand-500: 225 29 72;
+  --brand-600: 190 18 60;
+  --brand-700: 159 18 57;
+}
+[data-theme='whitepink'] {
+  --brand-50: 255 245 249;
+  --brand-100: 255 233 243;
+  --brand-200: 255 209 230;
+  --brand-300: 255 179 214;
+  --brand-400: 255 143 192;
+  --brand-500: 240 106 172;
+  --brand-600: 225 85 155;
+  --brand-700: 196 61 128;
+}
+[data-theme='black'] {
+  --brand-50: 244 244 245;
+  --brand-100: 228 228 231;
+  --brand-200: 212 212 216;
+  --brand-300: 161 161 170;
+  --brand-400: 82 82 91;
+  --brand-500: 39 39 42;
+  --brand-600: 24 24 27;
+  --brand-700: 9 9 11;
+}
+[data-theme='white'] {
+  --brand-50: 255 255 255;
+  --brand-100: 244 244 245;
+  --brand-200: 228 228 231;
+  --brand-300: 212 212 216;
+  --brand-400: 161 161 170;
+  --brand-500: 113 113 122;
+  --brand-600: 82 82 91;
+  --brand-700: 63 63 70;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    /* Single source of truth for the dark app background, tinted by the active
+       accent. html, body and .app-frame all reference this exact value so there
+       is never a seam between the status-bar safe area and the app surface. */
+    --app-bg-dark: color-mix(in srgb, rgb(var(--brand-500)) 10%, #0f1226);
+  }
+  html.dark {
+    color-scheme: dark;
+    /* Paint the document canvas (incl. the status-bar safe area and any
+       overscroll) with the exact same color as the app frame. */
+    background: var(--app-bg-dark);
+  }
+
+  html,
+  body,
+  #root {
+    /* Lock the document to the visible viewport. `dvh` accounts for the mobile
+       address bar (falls back to vh on older browsers). */
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  body {
+    @apply font-sans antialiased text-night-900;
+    /* Force NRT so it overrides any system default. 'LatinDigits' stays first
+       so 0-9 keep rendering as Western numerals (see @font-face above). */
+    font-family: 'LatinDigits', 'NRT', 'Tahoma', sans-serif !important;
+    /* NRT Bold (700) by default — the UI is uniformly bold (see override below). */
+    font-weight: 700;
+    /* The app lives inside a centered mobile frame; this is the area around it.
+       Background follows the active accent color theme. */
+    background: rgb(var(--brand-100));
+    margin: 0;
+    overflow: hidden; /* the inner <main> scrolls, never the page itself */
+    overscroll-behavior-y: none;
+  }
+
+  html.dark body {
+    @apply text-brand-50;
+    /* Exact same deep, accent-tinted base as the app frame (see --app-bg-dark). */
+    background: var(--app-bg-dark);
+  }
+
+  /* Respect notches / safe areas on phones. */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+@layer components {
+  /* Ensure every interactive control meets the 44x44px touch-target minimum. */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* The centered mobile frame; its background follows the accent theme. */
+  .app-frame {
+    background: linear-gradient(to bottom, rgb(var(--brand-50)), rgb(var(--brand-100)));
+  }
+  html.dark .app-frame {
+    background: var(--app-bg-dark);
+  }
+
+  /* Bottom navigation surface — frosted and tinted by the active theme. */
+  .app-nav {
+    background: color-mix(in srgb, rgb(var(--brand-500)) 8%, rgba(255, 255, 255, 0.9));
+  }
+  html.dark .app-nav {
+    background: color-mix(in srgb, rgb(var(--brand-500)) 16%, rgba(23, 26, 51, 0.92));
+  }
+
+  /* A soft, reusable card surface, lightly tinted by the active theme. */
+  .card {
+    @apply rounded-3xl shadow-card backdrop-blur-sm;
+    background: color-mix(in srgb, rgb(var(--brand-500)) 6%, #ffffff);
+  }
+  html.dark .card {
+    @apply shadow-none ring-1 ring-white/5;
+    background: color-mix(in srgb, rgb(var(--brand-500)) 14%, #171a33);
+  }
+
+  .btn {
+    @apply touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold transition active:scale-95;
+  }
+  .btn-primary {
+    @apply btn bg-brand-500 text-white shadow-soft hover:bg-brand-600;
+  }
+  .btn-ghost {
+    @apply btn bg-brand-100 text-brand-700;
+  }
+  html.dark .btn-ghost {
+    @apply bg-night-700 text-brand-100;
+  }
+
+  .field {
+    @apply w-full rounded-2xl border border-brand-200 bg-white px-4 py-3 text-night-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200;
+  }
+  html.dark .field {
+    @apply border-night-600 bg-night-700 text-brand-50 focus:border-brand-400 focus:ring-night-600;
+  }
+}
+
+/* Hide scrollbars inside the scrollable app body for a native feel. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/*
+ * Native <input type="date"> rendering fixes for iOS / Mobile Safari. Without
+ * these, Safari collapses the field's height and renders the value + calendar
+ * icon in a color that vanishes against the dark surface. We strip the native
+ * appearance (so width is respected), force the edit text to inherit the
+ * field's color (Safari otherwise leaves it transparent), and invert the
+ * calendar icon in dark mode so it stays visible. Tailwind utilities can't
+ * reach these WebKit pseudo-elements, hence the plain CSS.
+ */
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type='date']::-webkit-date-and-time-value {
+  text-align: start;
+}
+input[type='date']::-webkit-datetime-edit,
+input[type='date']::-webkit-datetime-edit-fields-wrapper,
+input[type='date']::-webkit-datetime-edit-text,
+input[type='date']::-webkit-datetime-edit-month-field,
+input[type='date']::-webkit-datetime-edit-day-field,
+input[type='date']::-webkit-datetime-edit-year-field {
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+}
+input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+html.dark input[type='date']::-webkit-calendar-picker-indicator {
+  /* Default icon is near-black — invert it so it shows on the dark field. */
+  filter: invert(1) brightness(1.7);
+}
+
+/* Keep the whole UI uniformly bold (NRT Bold), per preference — force the
+   lighter Tailwind weight classes up to 700 so nothing renders as Regular. */
+@layer utilities {
+  .font-normal,
+  .font-medium,
+  .font-semibold {
+    font-weight: 700;
+  }
+}
