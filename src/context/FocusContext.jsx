@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Brain, Coffee, Timer, Zap, Play } from 'lucide-react'
 import Modal from '../components/Modal.jsx'
+import { useLocalStorage } from '../hooks/useLocalStorage.js'
 
 /**
  * Global launcher for Focus mode — the heart of the app. Any component, from
@@ -39,6 +40,9 @@ export function FocusProvider({ children }) {
   // Custom-timer inputs (kept as strings so the fields can be cleared mid-edit).
   const [customWork, setCustomWork] = useState('30')
   const [customBreak, setCustomBreak] = useState('5')
+  // The last durations actually used (written by the Focus page) — powers the
+  // one-tap "resume" fast path.
+  const [lastFocus] = useLocalStorage('dlin:lastFocus', null)
 
   // Route into Focus mode with the full payload.
   const go = useCallback(
@@ -49,15 +53,23 @@ export function FocusProvider({ children }) {
     [navigate]
   )
 
-  // Public action: jump straight in when a time is known, otherwise prompt.
+  // Public action. Resolution order:
+  //  1. explicit `estimatedMinutes` → straight in with those.
+  //  2. a remembered `lastFocus` (and not forced to choose) → one-tap resume.
+  //  3. otherwise → open the picker (first run, or `choose: true`).
   const requestFocus = useCallback(
-    ({ contextTitle, contextDetail, estimatedMinutes, breakMinutes } = {}) => {
+    ({ contextTitle, contextDetail, estimatedMinutes, breakMinutes, choose } = {}) => {
       const title = (contextTitle || '').trim()
       const detail = (contextDetail || '').trim()
-      if (estimatedMinutes != null) go(title, detail, estimatedMinutes, breakMinutes)
-      else setPending({ contextTitle: title, contextDetail: detail })
+      if (estimatedMinutes != null) {
+        go(title, detail, estimatedMinutes, breakMinutes)
+      } else if (!choose && lastFocus?.work) {
+        go(title, detail, lastFocus.work, lastFocus.break)
+      } else {
+        setPending({ contextTitle: title, contextDetail: detail })
+      }
     },
-    [go]
+    [go, lastFocus]
   )
 
   const value = useMemo(() => ({ requestFocus }), [requestFocus])

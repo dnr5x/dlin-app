@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Play, Pause, RotateCcw, Brain, Coffee, Minus, Plus, Target } from 'lucide-react'
 import PageTransition from '../components/PageTransition.jsx'
 import { useApp } from '../context/AppContext.jsx'
+import { useLocalStorage } from '../hooks/useLocalStorage.js'
 
 // A gentle two-note chime synthesised with the Web Audio API (no asset needed).
 function playChime() {
@@ -59,6 +60,13 @@ export default function Focus() {
   // one-off override), otherwise from the saved defaults.
   const [workMin, setWorkMin] = useState(() => overrideWork ?? pomodoro.work)
   const [breakMin, setBreakMin] = useState(() => overrideBreak ?? pomodoro.break)
+
+  // Remember the durations actually used, so contextual focus actions can
+  // "resume last focus" in one tap instead of re-prompting the picker.
+  const [, setLastFocus] = useLocalStorage('dlin:lastFocus', null)
+  useEffect(() => {
+    setLastFocus({ work: workMin, break: breakMin })
+  }, [workMin, breakMin, setLastFocus])
 
   const totalSeconds = (mode === 'work' ? workMin : breakMin) * 60
   const [remaining, setRemaining] = useState(totalSeconds)

@@ -114,10 +114,12 @@ export default function Home() {
 
         {/* Quick actions — sleek dashboard cards (compact, not big blocks). */}
         <motion.div variants={item} className="grid grid-cols-2 gap-3">
-          {/* Focus shortcut — opens the global focus picker, then routes in. */}
+          {/* Focus shortcut — the deliberate "choose a duration" entry, so the
+              full picker (presets + custom) stays reachable even though
+              contextual focus actions now resume in one tap. */}
           <button
             type="button"
-            onClick={() => requestFocus({ contextTitle: '' })}
+            onClick={() => requestFocus({ contextTitle: '', choose: true })}
             className="card flex items-center gap-3 p-4 text-right transition active:scale-95"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blush-100 text-rose-500 dark:bg-night-700">
