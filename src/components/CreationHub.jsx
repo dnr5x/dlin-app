@@ -47,7 +47,10 @@ export default function CreationHub() {
         onClick={openHub}
         whileTap={{ scale: 0.9 }}
         aria-label="زیادکردنی نوێ"
-        className="absolute bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30 transition hover:bg-brand-600"
+        /* Float above the bottom nav with a clean gap: 7rem clears the nav's
+           content, and the safe-area inset matches the nav's own `safe-bottom`
+           so it never clashes on notched devices. */
+        className="absolute bottom-[calc(7rem_+_env(safe-area-inset-bottom))] right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30 transition hover:bg-brand-600"
       >
         <Plus size={28} />
       </motion.button>

@@ -62,12 +62,13 @@ export default function SubjectDetail() {
                 : 'text-night-700/60 dark:text-brand-100/60'
             }`}
           >
+            {/* Static highlight (no shared-layout `layoutId`): a `layoutId` here
+                lives inside the page-level <AnimatePresence mode="wait"> in
+                App.jsx, and once its animation runs it can stall `onExitComplete`
+                when navigating into the quiz — leaving a blank screen. A plain
+                highlight keeps the active-tab look without that deadlock. */}
             {tab === key && (
-              <motion.span
-                layoutId="subject-tab"
-                className="absolute inset-0 -z-10 rounded-xl bg-white shadow dark:bg-night-800"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              />
+              <span className="absolute inset-0 -z-10 rounded-xl bg-white shadow dark:bg-night-800" />
             )}
             <Icon size={18} /> {label}
           </button>
