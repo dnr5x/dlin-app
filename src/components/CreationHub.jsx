@@ -9,8 +9,8 @@ import ExamForm, { makeExam } from './ExamForm.jsx'
 import NoteCreator from './NoteCreator.jsx'
 
 const TITLES = {
-  menu: 'دەتەوێت چی زیاد بکەیت؟',
-  task: 'ئەرکی نوێ',
+  menu: 'چی زیاد بکەین؟',
+  task: 'ئیشێکی نوێ',
   exam: 'تاقیکردنەوەی نوێ',
   note: 'تێبینیی نوێ',
 }
@@ -42,18 +42,22 @@ export default function CreationHub() {
 
   return (
     <>
-      <motion.button
-        type="button"
-        onClick={openHub}
-        whileTap={{ scale: 0.9 }}
-        aria-label="زیادکردنی نوێ"
-        /* Float above the bottom nav with a clean gap: 7rem clears the nav's
-           content, and the safe-area inset matches the nav's own `safe-bottom`
-           so it never clashes on notched devices. */
-        className="absolute bottom-[calc(7rem_+_env(safe-area-inset-bottom))] right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30 transition hover:bg-brand-600"
-      >
-        <Plus size={28} />
-      </motion.button>
+      {/* Fixed, frame-centered layer so the FAB hugs the bottom-right of the
+          viewport (matching the fixed nav) regardless of the frame's height. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[440px] sm:bottom-6">
+        <motion.button
+          type="button"
+          onClick={openHub}
+          whileTap={{ scale: 0.9 }}
+          aria-label="زیادکردنی نوێ"
+          /* Compact and tucked into the bottom-right corner so it stays clear of
+             center-aligned content. Hovers just above the nav (bottom-24 = 6rem)
+             plus the safe-area inset that matches the nav's own `safe-bottom`. */
+          className="pointer-events-auto absolute bottom-[calc(6rem_+_env(safe-area-inset-bottom))] right-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30 transition hover:bg-brand-600"
+        >
+          <Plus size={22} />
+        </motion.button>
+      </div>
 
       <Modal open={open} onClose={close} title={TITLES[step]}>
         {step !== 'menu' && (
@@ -68,8 +72,8 @@ export default function CreationHub() {
 
         {step === 'menu' && (
           <div className="space-y-3">
-            <HubChoice Icon={ListChecks} title="ئەرک" desc="ئەرکێک بۆ ئەمڕۆ یان هەفتانە" onClick={() => setStep('task')} />
-            <HubChoice Icon={CalendarClock} title="تاقیکردنەوە" desc="تاقیکردنەوەیەک بۆ خشتەکە" onClick={() => setStep('exam')} />
+            <HubChoice Icon={ListChecks} title="ئیش" desc="ئیشێک بۆ ئەمڕۆ یان هەموو هەفتە" onClick={() => setStep('task')} />
+            <HubChoice Icon={CalendarClock} title="تاقیکردنەوە" desc="تاقیکردنەوەیەک بۆ خشتەکەت" onClick={() => setStep('exam')} />
             <HubChoice Icon={FileText} title="تێبینی" desc="تێبینییەک بۆ بابەتێک" onClick={() => setStep('note')} />
           </div>
         )}

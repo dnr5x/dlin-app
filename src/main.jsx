@@ -23,6 +23,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
+// Data permanency: ask the browser to mark our storage as *persistent*. Without
+// this, localStorage is "best-effort" and can be evicted under disk pressure —
+// with it, the student's exams/tasks/notes survive indefinitely. Best-effort and
+// never blocks startup; if the API is missing or denied, normal storage is used.
+if (navigator.storage?.persist) {
+  navigator.storage
+    .persisted()
+    .then((already) => {
+      if (!already) navigator.storage.persist().catch(() => {})
+    })
+    .catch(() => {})
+}
+
 // Service worker: enable offline PWA support in production only.
 // In development it must stay OFF, otherwise it caches the app shell and
 // serves stale files — which makes code/data changes appear "not to work".

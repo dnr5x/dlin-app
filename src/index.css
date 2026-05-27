@@ -64,15 +64,15 @@
   --brand-600: 219 39 119;
   --brand-700: 190 24 93;
 }
-[data-theme='darkpink'] {
-  --brand-50: 255 241 242;
-  --brand-100: 255 228 230;
-  --brand-200: 254 205 211;
-  --brand-300: 253 164 175;
-  --brand-400: 251 113 133;
-  --brand-500: 225 29 72;
-  --brand-600: 190 18 60;
-  --brand-700: 159 18 57;
+[data-theme='red'] {
+  --brand-50: 254 242 242;
+  --brand-100: 254 226 226;
+  --brand-200: 254 202 202;
+  --brand-300: 252 165 165;
+  --brand-400: 248 113 113;
+  --brand-500: 239 68 68;
+  --brand-600: 220 38 38;
+  --brand-700: 185 28 28;
 }
 [data-theme='whitepink'] {
   --brand-50: 255 245 249;
@@ -173,12 +173,15 @@
     background: var(--app-bg-dark);
   }
 
-  /* Bottom navigation surface — frosted and tinted by the active theme. */
+  /* Bottom navigation surface — SOLID (no alpha) so content scrolling behind it
+     is fully hidden; lightly tinted by the active theme. The home-indicator
+     inset lives HERE on the container (not as a pb- utility on the element). */
   .app-nav {
-    background: color-mix(in srgb, rgb(var(--brand-500)) 8%, rgba(255, 255, 255, 0.9));
+    background: color-mix(in srgb, rgb(var(--brand-500)) 8%, #ffffff);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   html.dark .app-nav {
-    background: color-mix(in srgb, rgb(var(--brand-500)) 16%, rgba(23, 26, 51, 0.92));
+    background: color-mix(in srgb, rgb(var(--brand-500)) 16%, rgb(23, 26, 51));
   }
 
   /* A soft, reusable card surface, lightly tinted by the active theme. */

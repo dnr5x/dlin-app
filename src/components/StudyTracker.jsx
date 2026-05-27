@@ -22,7 +22,7 @@ export default function StudyTracker() {
         <p className="mt-1 font-bold text-night-900 dark:text-brand-50">
           {completedSessions === 0
             ? 'ئەمڕۆ هێشتا دەستت پێنەکردووە، با دەست پێبکەین! 💪'
-            : `ئەمڕۆ ${completedSessions} جار بە تەواوی تەرکیزت کردووە 🔥`}
+            : `دەستخۆش شێرەکەم! ئەمڕۆ ${completedSessions} جار سەعیت کرد 🔥`}
         </p>
       </div>
     </section>

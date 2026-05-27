@@ -13,14 +13,34 @@ const uid = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
 /**
- * Coerce a subject's stored notes into an array of { id, text, createdAt }.
- * Legacy data kept a single string per subject; wrap it as one note (createdAt
- * 0) so older notes survive the move to a multi-note list.
+ * Coerce any single stored note into the canonical shape
+ * { id, title, description, timestamp }. Handles every historical format so no
+ * note is ever lost across upgrades:
+ *   • a bare string (oldest)            → becomes the title
+ *   • { id, text, createdAt } (v1)      → `text` becomes the title
+ *   • { id, title, description, … }     → kept as-is (timestamp normalized)
+ */
+const normalizeNote = (n) => {
+  if (typeof n === 'string') return { id: 'legacy', title: n, description: '', timestamp: 0 }
+  const timestamp = n.timestamp ?? n.createdAt ?? 0
+  if ('title' in n || 'description' in n)
+    return {
+      id: n.id ?? 'legacy',
+      title: n.title ?? '',
+      description: n.description ?? '',
+      timestamp,
+    }
+  return { id: n.id ?? 'legacy', title: n.text ?? '', description: '', timestamp }
+}
+
+/**
+ * Coerce a subject's stored notes into an array of canonical notes. Legacy data
+ * kept a single string per subject; wrap it as one note so older notes survive
+ * the move to a structured (title + description) multi-note list.
  */
 const toNoteArray = (raw) => {
-  if (Array.isArray(raw)) return raw
-  if (typeof raw === 'string' && raw.trim())
-    return [{ id: 'legacy', text: raw, createdAt: 0 }]
+  if (Array.isArray(raw)) return raw.map(normalizeNote)
+  if (typeof raw === 'string' && raw.trim()) return [normalizeNote(raw)]
   return []
 }
 
@@ -73,6 +93,11 @@ export function AppProvider({ children }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
+
+  // Migrate the removed "darkpink" accent to the new "red" theme.
+  useEffect(() => {
+    if (color === 'darkpink') setColor('red')
+  }, [color, setColor])
 
   // Apply the chosen accent color theme to <html data-theme>.
   useEffect(() => {
@@ -140,10 +165,16 @@ export function AppProvider({ children }) {
   const getNotes = useCallback((subjectId) => toNoteArray(notes[subjectId]), [notes])
 
   const addNote = useCallback(
-    (subjectId, text) => {
-      const clean = text.trim()
-      if (!clean) return
-      const note = { id: uid(), text: clean, createdAt: Date.now() }
+    (subjectId, { title, description } = {}) => {
+      const cleanTitle = (title ?? '').trim()
+      const cleanDesc = (description ?? '').trim()
+      if (!cleanTitle) return // a note needs at least a title
+      const note = {
+        id: uid(),
+        title: cleanTitle,
+        description: cleanDesc,
+        timestamp: Date.now(),
+      }
       setNotes((prev) => ({ ...prev, [subjectId]: [...toNoteArray(prev[subjectId]), note] }))
     },
     [setNotes]

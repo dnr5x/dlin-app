@@ -30,23 +30,53 @@ function publish(key, value, origin) {
 export function useLocalStorage(key, initial) {
   const readValue = useCallback(() => {
     if (typeof window === 'undefined') return resolve(initial)
+    let raw = null
     try {
-      const raw = window.localStorage.getItem(key)
-      return raw !== null ? JSON.parse(raw) : resolve(initial)
+      raw = window.localStorage.getItem(key)
     } catch {
+      // Storage is entirely unavailable (private mode, blocked) — run on the
+      // default in memory; we simply won't persist.
+      return resolve(initial)
+    }
+    if (raw === null) return resolve(initial)
+    try {
+      return JSON.parse(raw)
+    } catch {
+      // The stored value is corrupt. Never silently throw the student's bytes
+      // away: stash the original under a one-time backup key so it can be
+      // recovered, then fall back to the default so the app keeps working.
+      try {
+        const backupKey = `${key}__corrupt`
+        if (window.localStorage.getItem(backupKey) === null) {
+          window.localStorage.setItem(backupKey, raw)
+        }
+      } catch {
+        /* backup is best-effort */
+      }
       return resolve(initial)
     }
   }, [key, initial])
 
   const [value, setValue] = useState(readValue)
   const originRef = useRef({}) // stable identity for this hook instance
+  const didMount = useRef(false) // guards the first persist (see below)
 
   // Persist on every change, then notify sibling hooks in THIS window.
   useEffect(() => {
+    // Skip the very first run. On mount `value` is just the freshly-read value
+    // (or the default when nothing is stored yet) — writing it back here would,
+    // in the worst case, clobber good data with a default. We only ever persist
+    // genuine, post-mount changes.
+    if (!didMount.current) {
+      didMount.current = true
+      return
+    }
+    // Never write `undefined` over a previously good value.
+    if (value === undefined) return
     try {
       window.localStorage.setItem(key, JSON.stringify(value))
     } catch {
-      /* storage might be full or blocked; fail silently */
+      /* storage might be full or blocked; keep the in-memory value */
     }
     publish(key, value, originRef.current)
   }, [key, value])

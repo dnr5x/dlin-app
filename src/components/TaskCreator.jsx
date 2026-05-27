@@ -43,18 +43,18 @@ export default function TaskCreator({ onDone }) {
     return (
       <div className="space-y-3">
         <p className="text-sm text-night-700/70 dark:text-brand-100/60">
-          «{title.trim()}» چۆن دووبارە ببێتەوە؟
+          «{title.trim()}» کەی بیخەینەوە؟
         </p>
         <RepeatChoice
           Icon={CalendarDays}
           title="تەنها بۆ ئەمڕۆ"
-          desc="یەک جارە — تەنها ئەمڕۆ پیشان دەدرێت."
+          desc="یەک جارە — تەنها ئەمڕۆ دەردەکەوێت."
           onClick={() => save(false)}
         />
         <RepeatChoice
           Icon={Repeat}
           title={`هەموو ${todayName}یەک`}
-          desc="هەر هەفتە لەم ڕۆژەدا دووبارە دەبێتەوە."
+          desc="هەموو هەفتە لەم ڕۆژەدا دێتەوە."
           onClick={() => save(true)}
         />
         <button type="button" onClick={() => setStep('compose')} className="btn-ghost w-full">
@@ -74,7 +74,7 @@ export default function TaskCreator({ onDone }) {
           onChange={(e) => setTitle(e.target.value)}
           dir="rtl"
           autoFocus
-          placeholder="سەردێڕی ئەرک…"
+          placeholder="ئیشەکەت چییە؟"
           className="min-w-0 flex-1 bg-transparent px-3 py-3 text-right text-sm font-semibold text-night-900 outline-none placeholder:font-normal placeholder:text-night-700/40 dark:text-brand-50 dark:placeholder:text-brand-100/30"
         />
         {hasSubjects && (

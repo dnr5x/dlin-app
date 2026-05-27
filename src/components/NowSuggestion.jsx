@@ -1,4 +1,4 @@
-import { Play, Sparkles } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { useLocalStorage } from '../hooks/useLocalStorage.js'
 import { useFocusLauncher } from '../context/FocusContext.jsx'
 import { daysUntil, daysLabel } from './ExamPlanner.jsx'
@@ -29,7 +29,7 @@ export default function NowSuggestion() {
   // What we'll focus on: a specific sub-topic when available, else the subject.
   const contextTitle = nextTopic
     ? `${target.subject} — ${nextTopic}`
-    : `ئامادەکاری بۆ تاقیکردنەوەی ${target.subject}`
+    : `سەعی بۆ تاقیکردنەوەی ${target.subject}`
 
   return (
     <button
@@ -38,9 +38,7 @@ export default function NowSuggestion() {
       className="block w-full rounded-3xl bg-gradient-to-br from-brand-500 to-brand-600 p-5 text-right text-white shadow-card transition active:scale-[0.98]"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-white/85">
-          <Sparkles size={14} /> پێشنیاری ئێستا
-        </span>
+        <span className="text-xs font-semibold text-white/85">هەنگاوی داهاتوو</span>
         <span className="shrink-0 rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">
           {daysLabel(days)}
         </span>

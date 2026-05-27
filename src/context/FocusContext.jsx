@@ -88,11 +88,11 @@ export function FocusProvider({ children }) {
       {children}
 
       {/* Shared picker — one beautiful sheet for every entry point. */}
-      <Modal open={!!pending} onClose={() => setPending(null)} title="چەند خولەک تەرکیز دەکەیت؟">
+      <Modal open={!!pending} onClose={() => setPending(null)} title="چەند خولەک سەعی دەکەیت؟">
         {pending?.contextTitle && (
           <div className="mb-4 flex items-center justify-center gap-2 rounded-2xl bg-brand-50 px-4 py-2.5 text-center text-sm font-semibold text-brand-700 dark:bg-night-700/50 dark:text-brand-200">
             <Timer size={16} className="shrink-0" />
-            <span>تەرکیز لەسەر: {pending.contextTitle}</span>
+            <span>سەعی لەسەر: {pending.contextTitle}</span>
           </div>
         )}
 
@@ -108,7 +108,7 @@ export function FocusProvider({ children }) {
             >
               <Icon size={20} className="text-brand-500 dark:text-brand-300" />
               <span className="text-sm font-extrabold text-night-900 dark:text-brand-50">
-                {work} خولەک تەرکیز
+                {work} خولەک سەعی
               </span>
               <span className="text-[11px] font-semibold text-night-700/60 dark:text-brand-100/50">
                 {brk} خولەک پشوو · {label}
@@ -119,9 +119,9 @@ export function FocusProvider({ children }) {
 
         {/* Custom timer — exact study + break minutes. */}
         <div className="mt-5 border-t border-brand-100 pt-4 dark:border-night-700">
-          <h3 className="mb-3 text-sm font-bold text-night-900 dark:text-brand-50">کاتی تایبەت</h3>
+          <h3 className="mb-3 text-sm font-bold text-night-900 dark:text-brand-50">کاتی خۆت</h3>
           <div className="flex items-end gap-3">
-            <CustomField label="خوێندن (خولەک)" value={customWork} onChange={setCustomWork} max={180} />
+            <CustomField label="سەعی (خولەک)" value={customWork} onChange={setCustomWork} max={180} />
             <CustomField label="پشوو (خولەک)" value={customBreak} onChange={setCustomBreak} max={60} />
           </div>
           <button
@@ -129,7 +129,7 @@ export function FocusProvider({ children }) {
             onClick={startCustom}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3 font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-95"
           >
-            <Play size={18} /> دەستپێکردن
+            <Play size={18} /> با دەست پێبکەین!
           </button>
         </div>
       </Modal>

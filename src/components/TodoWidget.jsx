@@ -20,6 +20,7 @@ export default function TodoWidget() {
   const { subjects } = useApp()
   const [todos, setTodos] = useLocalStorage('dlin:todos', [])
   const [toDelete, setToDelete] = useState(null) // task id pending delete confirmation
+  const [confirmClear, setConfirmClear] = useState(false) // "clear today's tasks" confirmation
 
   // "Today" as a weekday index (0-6), a toDateString key (per-day "done"
   // tracking), an exact YYYY-MM-DD key (anchors one-offs), and its Kurdish name.
@@ -200,7 +201,7 @@ export default function TodoWidget() {
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-brand-700 dark:text-brand-200">
           <ListChecks size={20} />
-          <h2 className="font-bold">ئەرکەکانی ئەمڕۆ</h2>
+          <h2 className="font-bold">ئیشەکانی ئەمڕۆ</h2>
         </div>
         {visibleTodos.length > 0 && (
           <span
@@ -210,7 +211,7 @@ export default function TodoWidget() {
                 : 'bg-brand-50 text-brand-600 dark:bg-night-700 dark:text-brand-200'
             }`}
           >
-            {allDone ? 'هەمووی تەواو! 🎉' : `${doneCount}/${visibleTodos.length} تەواو بووە`}
+            {allDone ? 'هەمووت کرد! 🎉' : `${doneCount} لە ${visibleTodos.length} کرا`}
           </span>
         )}
       </div>
@@ -222,7 +223,7 @@ export default function TodoWidget() {
             {oneOffTasks.length > 0 && (
               <div>
                 <h3 className="mb-2 text-xs font-semibold text-night-700/50 dark:text-brand-100/40">
-                  تایبەت بە ئەمڕۆ
+                  تەنها بۆ ئەمڕۆ
                 </h3>
                 <ul className="space-y-1">
                   <AnimatePresence initial={false}>{oneOffTasks.map(renderTask)}</AnimatePresence>
@@ -254,10 +255,10 @@ export default function TodoWidget() {
           <div className="mt-3 flex justify-end">
             <button
               type="button"
-              onClick={clearAll}
+              onClick={() => setConfirmClear(true)}
               className="flex items-center gap-1 text-xs font-semibold text-night-700/50 transition hover:text-rose-500 active:scale-95 dark:text-brand-100/40"
             >
-              <Trash2 size={13} /> سڕینەوەی ئەرکەکانی ئەمڕۆ
+              <Trash2 size={13} /> سڕینەوەی ئیشەکانی ئەمڕۆ
             </button>
           </div>
         </>
@@ -266,10 +267,10 @@ export default function TodoWidget() {
         <div className="flex flex-col items-center gap-1 py-8 text-center">
           <span className="text-3xl">🎉</span>
           <p className="mt-1 font-semibold text-night-900 dark:text-brand-50">
-            هیچ ئەرکێک نییە بۆ ئەمڕۆ
+            ئەمڕۆ پشووە!
           </p>
           <p className="text-sm text-night-700/60 dark:text-brand-100/50">
-            پشوو بدە، یان بە دوگمەی ‎+‎ ئەرکێک زیاد بکە.
+            یان بە دوگمەی ‎+‎ ئیشێک بۆ خۆت زیاد بکە.
           </p>
         </div>
       )}
@@ -279,7 +280,15 @@ export default function TodoWidget() {
         open={toDelete !== null}
         onClose={() => setToDelete(null)}
         onConfirm={() => remove(toDelete)}
-        message="دڵنیایت لە سڕینەوەی ئەم ئەرکە؟"
+        message="دڵنیایت ئەم ئیشە بسڕیتەوە؟"
+      />
+
+      {/* Confirm before clearing all of today's one-off tasks. */}
+      <ConfirmDialog
+        open={confirmClear}
+        onClose={() => setConfirmClear(false)}
+        onConfirm={clearAll}
+        message="دڵنیایت ئیشەکانی ئەمڕۆ بسڕیتەوە؟"
       />
     </section>
   )

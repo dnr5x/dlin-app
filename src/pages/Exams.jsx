@@ -20,7 +20,7 @@ export default function Exams() {
           خشتەی تاقیکردنەوەکان
         </h1>
         <p className="mt-1 text-night-700/80 dark:text-brand-100/70">
-          هەموو تاقیکردنەوەکانت لێرە ڕێکبخە و ئامادە ببە.
+          هەموو تاقیکردنەوەکانت لێرەن — ئامادە بە بۆیان 📚
         </p>
       </header>
 

@@ -11,7 +11,8 @@ import { SUBJECT_ICONS } from '../data/subjects.js'
 export default function NoteCreator({ onDone }) {
   const { subjects, addNote } = useApp()
   const [subjectId, setSubjectId] = useState(null)
-  const [text, setText] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
 
   if (subjects.length === 0) {
     return (
@@ -54,11 +55,12 @@ export default function NoteCreator({ onDone }) {
     )
   }
 
-  // Step 2: write the note for the chosen subject.
+  // Step 2: write the note (title + description) for the chosen subject.
   const subject = subjects.find((s) => s.id === subjectId)
+  const canSave = title.trim().length > 0
   const save = () => {
-    if (!text.trim()) return
-    addNote(subjectId, text)
+    if (!canSave) return
+    addNote(subjectId, { title, description })
     onDone?.()
   }
 
@@ -71,18 +73,26 @@ export default function NoteCreator({ onDone }) {
       >
         <ChevronRight size={16} /> {subject?.name}
       </button>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
         dir="rtl"
         autoFocus
-        placeholder="تێبینییەکەت لێرە بنووسە…"
+        placeholder="سەردێڕی تێبینی (نموونە: یاساکانی وزە)..."
+        className="field text-right font-semibold"
+      />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        dir="rtl"
+        placeholder="وردەکاری و تێبینییە گرنگەکان..."
         className="field min-h-[120px] resize-y text-right leading-relaxed"
       />
       <button
         type="button"
         onClick={save}
-        disabled={!text.trim()}
+        disabled={!canSave}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3 font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
       >
         سەیڤی بکە

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Moon, Sun, User, CalendarDays, Trash2, Heart, Palette, Check } from 'lucide-react'
+import { Moon, Sun, User, CalendarDays, Trash2, Heart, Palette, Check, Download, Upload, ShieldCheck } from 'lucide-react'
 import PageTransition from '../components/PageTransition.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { useApp } from '../context/AppContext.jsx'
@@ -10,7 +10,7 @@ import { useApp } from '../context/AppContext.jsx'
 const COLOR_THEMES = [
   { id: 'purple', label: 'مۆر', swatch: '#8b5cf6' },
   { id: 'pink', label: 'پەمەیی', swatch: '#ec4899' },
-  { id: 'darkpink', label: 'پەمەیی تۆخ', swatch: '#e11d48' },
+  { id: 'red', label: 'سوور', swatch: '#ef4444' },
   { id: 'whitepink', label: 'پەمەیی کاڵ', swatch: '#ffb3d6' },
   { id: 'black', label: 'ڕەش', swatch: '#27272a' },
   { id: 'white', label: 'سپی', swatch: '#f4f4f5' },
@@ -27,6 +27,8 @@ export default function Settings() {
   const { theme, toggleTheme, color, setColor, studentName, setStudentName, examDate, setExamDate } =
     useApp()
   const [confirmReset, setConfirmReset] = useState(false)
+  const fileRef = useRef(null)
+  const [pendingImport, setPendingImport] = useState(null) // parsed backup awaiting confirm
 
   const clearAllData = () => {
     Object.keys(localStorage)
@@ -36,12 +38,56 @@ export default function Settings() {
     window.location.href = '/'
   }
 
+  // ----- Backup & restore -----
+  // Export: snapshot every localStorage key into a downloadable JSON file.
+  const exportData = () => {
+    const data = {}
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      data[key] = localStorage.getItem(key)
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'study_app_backup.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Import step 1: read & parse the chosen file, then ask for confirmation.
+  const handleFile = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-picking the same file later
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) setPendingImport(parsed)
+        else alert('ئەم فایلە کۆپیی یەدەگی دروست نییە 😕')
+      } catch {
+        alert('نەتوانرا فایلەکە بخوێنرێتەوە 😕')
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  // Import step 2 (after confirm): replace stored data with the backup, then reload.
+  const confirmImport = () => {
+    localStorage.clear()
+    Object.entries(pendingImport).forEach(([k, v]) => {
+      localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v))
+    })
+    window.location.reload()
+  }
+
   return (
     <PageTransition>
       <header className="mb-5">
         <h1 className="text-2xl font-extrabold text-night-900 dark:text-brand-50">ڕێکخستنەکان</h1>
         <p className="mt-1 text-night-700/80 dark:text-brand-100/70">
-          دلین بەو شێوەیە ڕێکی بخە کە حەزت لێیەتی.
+          بەو شێوەیە ڕێکی بخە کە حەزت لێیەتی.
         </p>
       </header>
 
@@ -57,7 +103,7 @@ export default function Settings() {
               value={studentName}
               onChange={(e) => setStudentName(e.target.value)}
               dir="rtl"
-              placeholder="ناوەکەت بنووسە"
+              placeholder="ناوت چییە؟"
               className="field text-right"
             />
           </label>
@@ -69,7 +115,7 @@ export default function Settings() {
             <div className="flex items-center gap-3">
               <IconBubble>{theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}</IconBubble>
               <div>
-                <p dir="ltr" className="font-bold text-night-900 dark:text-brand-50">Dark Mode</p>
+                <p className="font-bold text-night-900 dark:text-brand-50">مۆدی شەو</p>
                 <p className="text-xs text-night-700/70 dark:text-brand-100/60">
                   بۆ ئەوەی چاوت نەیەشێ
                 </p>
@@ -151,9 +197,40 @@ export default function Settings() {
               className="field block h-12 w-full min-w-0 max-w-full box-border appearance-none text-left text-night-900 dark:text-brand-50"
             />
             <span className="mt-2 block text-xs text-night-700/70 dark:text-brand-100/60">
-              ئەم بەروارە لە ژمێرەرەوەی ماڵەوەدا بەکاردێت.
+              ئەمە لە ژماردنەوەی ماڵەوەدا دەردەکەوێت.
             </span>
           </label>
+        </SettingCard>
+
+        {/* Data backup & restore */}
+        <SettingCard>
+          <div className="mb-3 flex items-center gap-3">
+            <IconBubble><ShieldCheck size={20} /></IconBubble>
+            <div>
+              <p className="font-bold text-night-900 dark:text-brand-50">پاراستنی داتاکان</p>
+              <p className="text-xs text-night-700/70 dark:text-brand-100/60">
+                کۆپییەک هەڵبگرە، یان داتای کۆنت بگەڕێنەوە
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={exportData}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-500 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-95"
+            >
+              <Download size={18} /> کۆپیی یەدەگ
+            </button>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-100 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-200 active:scale-95 dark:bg-night-700 dark:text-brand-200 dark:hover:bg-night-600"
+            >
+              <Upload size={18} /> گەڕاندنەوەی داتا
+            </button>
+          </div>
+          {/* Hidden picker, opened by the "گەڕاندنەوەی داتا" button. */}
+          <input ref={fileRef} type="file" accept=".json,application/json" onChange={handleFile} className="hidden" />
         </SettingCard>
 
         {/* Reset data */}
@@ -188,6 +265,16 @@ export default function Settings() {
         title="سڕینەوەی هەموو داتاکان؟"
         message="هەموو تێبینی، کویز و ڕێکخستنەکانت بۆ هەمیشە دەسڕێنەوە. دڵنیایت؟"
         confirmLabel="بەڵێ، بیسڕەوە"
+      />
+
+      {/* Confirm before overwriting current data with an imported backup. */}
+      <ConfirmDialog
+        open={pendingImport !== null}
+        onClose={() => setPendingImport(null)}
+        onConfirm={confirmImport}
+        title="گەڕاندنەوەی داتا؟"
+        message="دڵنیایت؟ داتاکانی پێشووت دەسڕێنەوە و شوێنیان دەگیرێتەوە."
+        confirmLabel="بەڵێ، بیگەڕێنەوە"
       />
     </PageTransition>
   )

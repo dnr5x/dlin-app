@@ -66,7 +66,7 @@ export default function TodaySchedule() {
         </div>
       ) : (
         <p className="text-sm text-night-700/50 dark:text-brand-100/40">
-          خشتەی ئەمڕۆت دیاری نەکردووە
+          هێشتا خشتەی ئەمڕۆت دانەناوە
         </p>
       )}
 
@@ -74,7 +74,7 @@ export default function TodaySchedule() {
       <Modal open={editing} onClose={() => setEditing(false)} title="خشتەی هەفتانە">
         {subjects.length === 0 ? (
           <p className="text-sm text-night-700/60 dark:text-brand-100/50">
-            پێویستە سەرەتا لە بەشی بابەتەکان بابەت زیاد بکەیت.
+            سەرەتا لە بەشی بابەتەکان بابەتێک زیاد بکە.
           </p>
         ) : (
           <div className="space-y-5">

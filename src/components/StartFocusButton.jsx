@@ -1,7 +1,7 @@
 import { Timer } from 'lucide-react'
 import { useFocusLauncher } from '../context/FocusContext.jsx'
 
-const DEFAULT_LABEL = 'دەست بکە بە تەرکیز'
+const DEFAULT_LABEL = 'دەست بکە بە سەعی'
 
 /**
  * Universal "Start Focusing" action. Drop it into any component to send the

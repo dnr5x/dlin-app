@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Timer, BookOpen, ChevronDown } from 'lucide-react'
-import PageTransition from '../components/PageTransition.jsx'
 import CountdownTimer from '../components/CountdownTimer.jsx'
 import QuoteWidget from '../components/QuoteWidget.jsx'
 import LevelBar from '../components/LevelBar.jsx'
@@ -64,113 +63,86 @@ function LiveClock() {
   )
 }
 
-const stagger = {
-  animate: { transition: { staggerChildren: 0.07 } },
-}
-const item = {
-  initial: { opacity: 0, y: 14 },
-  animate: { opacity: 1, y: 0 },
-}
-
 export default function Home() {
   const { studentName, examDate } = useApp()
   const { requestFocus } = useFocusLauncher()
 
   return (
-    <PageTransition>
-      <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-5">
-        {/* Warm greeting header */}
-        <motion.header variants={item}>
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-brand-500 dark:text-brand-300">{greeting()}</p>
-            <LiveClock />
-          </div>
-          <h1 className="mt-1 text-2xl font-extrabold leading-snug text-night-900 dark:text-brand-50">
-            بەخێربێیتەوە {studentName}!
-          </h1>
-          <MoodCheck />
-        </motion.header>
+    // Plain, STATIC layout — no PageTransition / stagger motion here. Animating
+    // the page (framer-motion) can momentarily set its height to `auto`, and if
+    // the iOS safe-area shifts at that instant it leaves a gap at the bottom. A
+    // static column has a fixed, predictable height → no jitter, no gap. (Spacing
+    // is handled by `space-y-5`; the page's padding lives once on <main>.)
+    <div className="space-y-5">
+      {/* Warm greeting header */}
+      <header>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm text-brand-500 dark:text-brand-300">{greeting()}</p>
+          <LiveClock />
+        </div>
+        <h1 className="mt-1 text-2xl font-extrabold leading-snug text-night-900 dark:text-brand-50">
+          بەخێربێیتەوە {studentName}!
+        </h1>
+        <MoodCheck />
+      </header>
 
-        {/* "Right now" — the single, highest-priority study action. Quietly hides
-            itself when there's no upcoming exam to suggest. */}
-        <motion.div variants={item}>
-          <NowSuggestion />
-        </motion.div>
+      {/* "Right now" — highest-priority study action; returns null (zero height)
+          when there's no upcoming exam. */}
+      <NowSuggestion />
 
-        {/* Level & XP progress (not in the requested list — kept as a top status). */}
-        <motion.div variants={item}>
-          <LevelBar />
-        </motion.div>
+      {/* Level & XP progress */}
+      <LevelBar />
 
-        {/* 2) Main exam countdown — motivation */}
-        <motion.div variants={item}>
-          <CountdownTimer target={examDate} />
-        </motion.div>
+      {/* Main exam countdown */}
+      <CountdownTimer target={examDate} />
 
-        {/* Quote of the day — above the quick actions */}
-        <motion.div variants={item}>
-          <QuoteWidget />
-        </motion.div>
+      {/* Quote of the day */}
+      <QuoteWidget />
 
-        {/* Quick actions — sleek dashboard cards (compact, not big blocks). */}
-        <motion.div variants={item} className="grid grid-cols-2 gap-3">
-          {/* Focus shortcut — the deliberate "choose a duration" entry, so the
-              full picker (presets + custom) stays reachable even though
-              contextual focus actions now resume in one tap. */}
-          <button
-            type="button"
-            onClick={() => requestFocus({ contextTitle: '', choose: true })}
-            className="card flex items-center gap-3 p-4 text-right transition active:scale-95"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blush-100 text-rose-500 dark:bg-night-700">
-              <Timer size={22} />
+      {/* Quick actions — sleek dashboard cards (compact, not big blocks). */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Focus shortcut — opens the duration picker. */}
+        <button
+          type="button"
+          onClick={() => requestFocus({ contextTitle: '', choose: true })}
+          className="card flex items-center gap-3 p-4 text-right transition active:scale-95"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blush-100 text-rose-500 dark:bg-night-700">
+            <Timer size={22} />
+          </span>
+          <span className="min-w-0">
+            <span className="block font-bold text-night-900 dark:text-brand-50">تەرکیز</span>
+            <span className="block truncate text-xs text-night-700/60 dark:text-brand-100/60">
+              دەست بکە بە تەرکیز
             </span>
-            <span className="min-w-0">
-              <span className="block font-bold text-night-900 dark:text-brand-50">تەرکیز</span>
-              <span className="block truncate text-xs text-night-700/60 dark:text-brand-100/60">
-                دەست بکە بە تەرکیز
-              </span>
+          </span>
+        </button>
+
+        <Link to="/subjects" className="card flex items-center gap-3 p-4 transition active:scale-95">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-600 dark:bg-night-700">
+            <BookOpen size={22} />
+          </span>
+          <span className="min-w-0">
+            <span className="block font-bold text-night-900 dark:text-brand-50">بابەتەکان</span>
+            <span className="block truncate text-xs text-night-700/60 dark:text-brand-100/60">
+              تێبینی و کویزەکان
             </span>
-          </button>
+          </span>
+        </Link>
+      </div>
 
-          <Link
-            to="/subjects"
-            className="card flex items-center gap-3 p-4 transition active:scale-95"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-600 dark:bg-night-700">
-              <BookOpen size={22} />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-bold text-night-900 dark:text-brand-50">بابەتەکان</span>
-              <span className="block truncate text-xs text-night-700/60 dark:text-brand-100/60">
-                تێبینی و کویزەکان
-              </span>
-            </span>
-          </Link>
-        </motion.div>
+      {/* Today's schedule */}
+      <TodaySchedule />
 
-        {/* Today's schedule — placed below the quick actions */}
-        <motion.div variants={item}>
-          <TodaySchedule />
-        </motion.div>
+      {/* Today's tasks */}
+      <TodoWidget />
 
-        {/* Today's tasks */}
-        <motion.div variants={item}>
-          <TodoWidget />
-        </motion.div>
+      {/* Study stats / streak */}
+      <StudyTracker />
 
-        {/* 6) Study stats / streak */}
-        <motion.div variants={item}>
-          <StudyTracker />
-        </motion.div>
-
-        {/* Next upcoming exam only — full schedule lives on /exams. */}
-        <motion.div variants={item}>
-          <NextExamCard />
-        </motion.div>
-
-      </motion.div>
-    </PageTransition>
+      {/* Next upcoming exam only — full schedule lives on /exams. */}
+      <NextExamCard />
+    </div>
   )
 }
 

@@ -1,31 +1,47 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Play, Pause, RotateCcw, Brain, Coffee, Minus, Plus, Target } from 'lucide-react'
+import { Play, Pause, RotateCcw, Brain, Coffee, Minus, Plus, Target, ChevronDown } from 'lucide-react'
 import PageTransition from '../components/PageTransition.jsx'
+import Modal from '../components/Modal.jsx'
 import { useApp } from '../context/AppContext.jsx'
 import { useLocalStorage } from '../hooks/useLocalStorage.js'
+import { SUBJECT_ICONS } from '../data/subjects.js'
 
-// A gentle two-note chime synthesised with the Web Audio API (no asset needed).
-function playChime() {
+// Completion chimes, synthesised with the Web Audio API (no audio assets).
+//  • 'work'  → a bright, rewarding rising arpeggio (E5→A5→E6) to celebrate a
+//    finished study session.
+//  • 'break' → a softer, lower, settling two-note (C5→G4) that gently nudges the
+//    student to resume studying.
+function playChime(kind = 'work') {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext
     const ctx = new Ctx()
-    const notes = [880, 1175] // soft, pleasant interval
-    notes.forEach((freq, i) => {
+    const WORK = [
+      { f: 659.25, type: 'sine' }, // E5
+      { f: 880.0, type: 'sine' }, // A5
+      { f: 1318.51, type: 'triangle' }, // E6 — bright finish
+    ]
+    const BREAK = [
+      { f: 523.25, type: 'sine' }, // C5
+      { f: 392.0, type: 'sine' }, // G4 — calm, settling
+    ]
+    const notes = kind === 'break' ? BREAK : WORK
+    const peak = kind === 'break' ? 0.18 : 0.26 // breaks a touch quieter
+    notes.forEach(({ f, type }, i) => {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-      osc.type = 'sine'
-      osc.frequency.value = freq
-      const t = ctx.currentTime + i * 0.18
+      osc.type = type
+      osc.frequency.value = f
+      const t = ctx.currentTime + i * 0.16
       gain.gain.setValueAtTime(0, t)
-      gain.gain.linearRampToValueAtTime(0.25, t + 0.04)
+      gain.gain.linearRampToValueAtTime(peak, t + 0.04)
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
       osc.connect(gain).connect(ctx.destination)
       osc.start(t)
       osc.stop(t + 0.65)
     })
-    setTimeout(() => ctx.close(), 1500)
+    setTimeout(() => ctx.close(), 1800)
   } catch {
     /* audio not available — the visual cue still fires */
   }
@@ -36,7 +52,7 @@ const CIRC = 2 * Math.PI * R
 const clampMin = (m) => Math.min(90, Math.max(1, Math.round(m)))
 
 export default function Focus() {
-  const { pomodoro, setPomodoro, addXp, addCompletedSession } = useApp()
+  const { pomodoro, setPomodoro, addXp, addCompletedSession, subjects } = useApp()
 
   // Global focus payload, delivered via router state from any "Start Focusing"
   // action across the app: { contextTitle, estimatedMinutes? }. The title says
@@ -49,7 +65,13 @@ export default function Focus() {
     focusCtx?.estimatedMinutes != null ? clampMin(focusCtx.estimatedMinutes) : null
   const overrideBreak =
     focusCtx?.breakMinutes != null ? clampMin(focusCtx.breakMinutes) : null
-  const focusLabel = contextTitle ? `تەرکیز لەسەر: ${contextTitle}` : 'تەرکیز لەسەر خوێندنەکانت'
+
+  // The student can re-point the session at a subject from inside Focus mode;
+  // the chosen subject overrides whatever context we arrived with.
+  const [subjectOverride, setSubjectOverride] = useState(null)
+  const [subjectPickerOpen, setSubjectPickerOpen] = useState(false)
+  const activeTitle = subjectOverride || contextTitle
+  const focusLabel = activeTitle ? `سەعی لەسەر: ${activeTitle}` : 'سەعیی گشتی'
 
   const [mode, setMode] = useState('work') // 'work' | 'break'
   const [running, setRunning] = useState(false)
@@ -111,10 +133,10 @@ export default function Focus() {
   // mode. A study session AUTO-STARTS the break (seamless, no manual tap); a
   // break ends and waits for the student to choose to study again.
   const finishSession = () => {
-    playChime()
+    const wasWork = mode === 'work'
+    playChime(wasWork ? 'work' : 'break') // rewarding for study, gentle nudge after a break
     if (navigator.vibrate) navigator.vibrate([200, 100, 200])
 
-    const wasWork = mode === 'work'
     if (wasWork) {
       addXp(50)
       addCompletedSession()
@@ -163,29 +185,36 @@ export default function Focus() {
   //  • paused part-way (remaining < total) → resume hint
   //  • fresh / just reset (remaining === total) → start prompt
   const statusText = running
-    ? 'بەردەوام بە... تەرکیزت لای سەعییەکەت بێت 🔥'
+    ? 'بەردەوام بە! سەرت لە سەعییەکەت بێت 🔥'
     : remaining < totalSeconds
-      ? 'وەستێنراوە ⏸️ بەردەوام بە کاتێک ئامادەبوویت.'
-      : 'ئامادەی؟ دوگمەی دەستپێکردن دابگرە.'
+      ? 'وەستا ⏸️ کەی ئامادە بوویت، بەردەوام بە.'
+      : 'ئامادەی دەست پێبکە 👆'
 
   return (
     <PageTransition>
       <header className="mb-4 text-center">
-        <h1 className="text-2xl font-extrabold text-night-900 dark:text-brand-50">مۆدی تەرکیز</h1>
+        <h1 className="text-2xl font-extrabold text-night-900 dark:text-brand-50">کاتی سەعی</h1>
         <p className="mt-1 text-night-700/80 dark:text-brand-100/70">
-          کاتژمێری تایبەت بە سەعیکردن و تەرکیزی بەردەوام.
+          کاتت دیاری بکە و دەست بکە بە سەعی 💪
         </p>
       </header>
 
-      {/* What we're focusing on — the title as the main context, with the task's
-          description elegantly shown beneath it so the to-do stays visible. */}
-      <div className="mx-auto mb-5 max-w-xs rounded-2xl bg-brand-50 px-4 py-3 text-center dark:bg-night-700/50">
-        <div className="flex items-center justify-center gap-2 text-sm font-semibold text-brand-700 dark:text-brand-200">
+      {/* What we're focusing on — a clickable subject selector. Tapping it lets
+          the student re-point the session at any subject without leaving Focus.
+          The task description (if any) shows beneath, until a subject is chosen. */}
+      <div className="mx-auto mb-5 max-w-xs">
+        <button
+          type="button"
+          onClick={() => setSubjectPickerOpen(true)}
+          aria-haspopup="dialog"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700 transition active:scale-[0.98] dark:bg-night-700/50 dark:text-brand-200"
+        >
           <Target size={16} className="shrink-0" />
-          <span>{focusLabel}</span>
-        </div>
-        {contextDetail && (
-          <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-night-700/75 dark:text-brand-100/65">
+          <span className="min-w-0 truncate">{focusLabel}</span>
+          <ChevronDown size={16} className="shrink-0 text-brand-400" />
+        </button>
+        {!subjectOverride && contextDetail && (
+          <p className="mt-2 whitespace-pre-wrap text-center text-xs leading-relaxed text-night-700/75 dark:text-brand-100/65">
             {contextDetail}
           </p>
         )}
@@ -194,7 +223,7 @@ export default function Focus() {
       {/* Mode switch */}
       <div className="mx-auto mb-6 grid max-w-xs grid-cols-2 gap-2 rounded-2xl bg-brand-100 p-1 dark:bg-night-700">
         <ModeTab active={mode === 'work'} onClick={() => switchMode('work')} Icon={Brain}>
-          خوێندن
+          سەعی
         </ModeTab>
         <ModeTab active={mode === 'break'} onClick={() => switchMode('break')} Icon={Coffee}>
           پشوو
@@ -222,7 +251,10 @@ export default function Focus() {
             className={mode === 'work' ? 'stroke-brand-500' : 'stroke-emerald-400'}
             strokeDasharray={CIRC}
             animate={{ strokeDashoffset: CIRC * (1 - progress) }}
-            transition={{ duration: 0.5, ease: 'linear' }}
+            // Smooth sweep only while ticking. When stopped/paused (e.g. rapidly
+            // tapping +/- to adjust the duration) update instantly, so stacked
+            // 0.5s animations can't fight each other and glitch the ring out.
+            transition={{ duration: running ? 0.5 : 0, ease: 'linear' }}
           />
         </svg>
 
@@ -238,9 +270,9 @@ export default function Focus() {
             {celebrate
               ? earnedXp
                 ? `🎉 +${earnedXp} خاڵ ⭐️`
-                : '🎉 تەواو بوو!'
+                : '🎉 دەستخۆش!'
               : mode === 'work'
-                ? 'کاتی خوێندن'
+                ? 'کاتی سەعی'
                 : 'کاتی پشوو'}
           </span>
         </motion.div>
@@ -270,9 +302,9 @@ export default function Focus() {
 
       {/* Duration settings */}
       <section className="card mx-auto mt-7 max-w-xs space-y-3 p-4">
-        <h2 className="text-sm font-bold text-night-900 dark:text-brand-50">ڕێکخستنی ماوەکان</h2>
+        <h2 className="text-sm font-bold text-night-900 dark:text-brand-50">کاتەکان دیاری بکە</h2>
         <DurationRow
-          label="ماوەی خوێندن"
+          label="ماوەی سەعی"
           value={workMin}
           onDec={() => adjustWork(-1)}
           onInc={() => adjustWork(1)}
@@ -284,6 +316,50 @@ export default function Focus() {
           onInc={() => adjustBreak(1)}
         />
       </section>
+
+      {/* Subject selector — change what we're focusing on without leaving Focus. */}
+      <Modal
+        open={subjectPickerOpen}
+        onClose={() => setSubjectPickerOpen(false)}
+        title="سەعی لەسەر چی بکەین؟"
+      >
+        {subjects.length === 0 ? (
+          <p className="py-4 text-center text-sm text-night-700/60 dark:text-brand-100/50">
+            هێشتا هیچ بابەتێکت نییە.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {subjects.map((s) => {
+              const Icon = SUBJECT_ICONS[s.id]
+              const active = subjectOverride === s.name
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setSubjectOverride(s.name)
+                    setSubjectPickerOpen(false)
+                  }}
+                  className={`flex items-center gap-2 rounded-2xl border-2 p-3 text-right transition active:scale-[0.98] ${
+                    active
+                      ? 'border-brand-400 bg-brand-50 dark:border-brand-400 dark:bg-night-600'
+                      : 'border-brand-200 bg-white hover:border-brand-400 hover:bg-brand-50 dark:border-night-600 dark:bg-night-700 dark:hover:border-brand-400'
+                  }`}
+                >
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${s.gradient} text-white`}
+                  >
+                    {Icon ? <Icon size={16} /> : <span className="text-sm">{s.emoji}</span>}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-night-900 dark:text-brand-50">
+                    {s.name}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </Modal>
     </PageTransition>
   )
 }

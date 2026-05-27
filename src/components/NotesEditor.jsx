@@ -12,30 +12,31 @@ function formatWhen(ts) {
 }
 
 /**
- * Notes editor for a single subject. The textarea at the top adds a new note to
- * the subject's list on "سەیڤی بکە" and then clears, ready for the next one.
- * Saved notes are shown below as dated cards, newest first, each deletable.
+ * Notes editor for a single subject. Mirrors the Tasks structure: a single-line
+ * Title field plus a Description textarea. "سەیڤی بکە" adds a new note to the
+ * subject's list and clears the fields, ready for the next one. Saved notes are
+ * shown below as cards (title bold, description softer beneath), newest first.
  */
 export default function NotesEditor({ subjectId }) {
   const { getNotes, addNote, deleteNote } = useApp()
-  const [text, setText] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [justSaved, setJustSaved] = useState(false)
 
-  // Newest first; legacy notes (createdAt 0) naturally sort to the bottom.
-  const notes = [...getNotes(subjectId)].sort((a, b) => b.createdAt - a.createdAt)
-  const canSave = text.trim().length > 0
+  // Newest first; legacy notes (timestamp 0) naturally sort to the bottom.
+  const notes = [...getNotes(subjectId)].sort((a, b) => b.timestamp - a.timestamp)
+  const canSave = title.trim().length > 0
 
   const handleSave = () => {
     if (!canSave) return
-    addNote(subjectId, text)
-    setText('') // clear, ready for the next note
+    addNote(subjectId, { title, description })
+    setTitle('')
+    setDescription('') // clear both, ready for the next note
     setJustSaved(true)
   }
 
-  const onChange = (e) => {
-    setText(e.target.value)
-    if (justSaved) setJustSaved(false)
-  }
+  // Any edit cancels the lingering "saved" confirmation.
+  const touch = () => justSaved && setJustSaved(false)
 
   // Auto-dismiss the green "saved" confirmation after 2 seconds.
   useEffect(() => {
@@ -52,20 +53,36 @@ export default function NotesEditor({ subjectId }) {
 
   return (
     <div className="space-y-4">
-      {/* Input area */}
+      {/* Input area: a Title field + a Description textarea, like Tasks. */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-night-700 dark:text-brand-100/80">
           <FileText size={18} />
           <span className="text-sm font-semibold">فۆرمول، پوختە و تێبینییە گرنگەکان</span>
         </div>
 
-        <textarea
-          value={text}
-          onChange={onChange}
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value)
+            touch()
+          }}
           dir="rtl"
           spellCheck={false}
-          placeholder="لێرە تێبینییەکت بنووسە… بۆ نموونە فۆرمولێک، پوختەی وانەیەک، یان خاڵێکی گرنگ."
-          className="field min-h-[140px] resize-y text-right leading-relaxed"
+          placeholder="سەردێڕی تێبینی (نموونە: یاساکانی وزە)..."
+          className="field text-right font-semibold"
+        />
+
+        <textarea
+          value={description}
+          onChange={(e) => {
+            setDescription(e.target.value)
+            touch()
+          }}
+          dir="rtl"
+          spellCheck={false}
+          placeholder="وردەکاری و تێبینییە گرنگەکان..."
+          className="field min-h-[120px] resize-y text-right leading-relaxed"
         />
 
         <button
@@ -104,12 +121,24 @@ export default function NotesEditor({ subjectId }) {
                 className="rounded-2xl bg-brand-50/70 p-4 dark:bg-night-700/40"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p
-                    dir="auto"
-                    className="min-w-0 flex-1 whitespace-pre-wrap break-words leading-relaxed text-night-900 dark:text-brand-50"
-                  >
-                    {note.text}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    {/* Title — prominent. */}
+                    <p
+                      dir="auto"
+                      className="break-words font-bold leading-snug text-night-900 dark:text-brand-50"
+                    >
+                      {note.title}
+                    </p>
+                    {/* Description — softer, slightly smaller, beneath the title. */}
+                    {note.description && (
+                      <p
+                        dir="auto"
+                        className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-night-700/60 dark:text-brand-100/50"
+                      >
+                        {note.description}
+                      </p>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => deleteNote(subjectId, note.id)}
@@ -119,12 +148,12 @@ export default function NotesEditor({ subjectId }) {
                     <Trash2 size={18} />
                   </button>
                 </div>
-                {note.createdAt > 0 && (
+                {note.timestamp > 0 && (
                   <p
                     dir="ltr"
                     className="mt-2 text-left text-[11px] tabular-nums text-night-700/50 dark:text-brand-100/40"
                   >
-                    {formatWhen(note.createdAt)}
+                    {formatWhen(note.timestamp)}
                   </p>
                 )}
               </motion.li>

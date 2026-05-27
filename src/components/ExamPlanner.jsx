@@ -34,6 +34,11 @@ export function daysLabel(days) {
   return 'تێپەڕیوە'
 }
 
+// Sub-topic title / description with backward-compat: topics created before the
+// title+description split stored a single `text` field — treat it as the title.
+const topicTitle = (t) => (t.title ?? t.text ?? '').trim()
+const topicDescription = (t) => (t.description ?? '').trim()
+
 /**
  * "خشتەی تاقیکردنەوەکان" — add exams (subject + date), auto-count the days left
  * with urgency colors, and expand each one for a target score and a study
@@ -46,11 +51,17 @@ export default function ExamPlanner() {
     setExams((prev) => prev.map((ex) => (ex.id === id ? { ...ex, ...patch } : ex)))
   const removeExam = (id) => setExams((prev) => prev.filter((ex) => ex.id !== id))
 
-  const addTopic = (examId, text) =>
+  const addTopic = (examId, title, description) =>
     setExams((prev) =>
       prev.map((ex) =>
         ex.id === examId
-          ? { ...ex, topics: [...(ex.topics ?? []), { id: newId(), text, done: false }] }
+          ? {
+              ...ex,
+              topics: [
+                ...(ex.topics ?? []),
+                { id: newId(), title: title.trim(), description: (description || '').trim(), done: false },
+              ],
+            }
           : ex
       )
     )
@@ -80,10 +91,10 @@ export default function ExamPlanner() {
           <CalendarClock size={30} />
         </span>
         <p className="mt-1 font-bold text-night-900 dark:text-brand-50">
-          هیچ تاقیکردنەوەیەک نزیک نییە
+          هیچ تاقیکردنەوەیەکت لە پێشە نییە
         </p>
         <p className="text-sm text-night-700/60 dark:text-brand-100/50">
-          پشوو بدە! 🎉 بە دوگمەی ‎+‎ تاقیکردنەوەیەک زیاد بکە.
+          لێیگەڕێ یان بە دوگمەی ‎+‎ تاقیکردنەوەیەک زیاد بکە.
         </p>
       </div>
     )
@@ -110,14 +121,16 @@ export default function ExamPlanner() {
 function ExamItem({ exam, days, onPatch, onRemove, onAddTopic, onToggleTopic, onRemoveTopic }) {
   const [open, setOpen] = useState(false)
   const [topicText, setTopicText] = useState('')
+  const [topicDesc, setTopicDesc] = useState('')
   const [confirmDel, setConfirmDel] = useState(false) // delete-confirmation dialog
 
   const submitTopic = (e) => {
     e.preventDefault()
     const t = topicText.trim()
     if (!t) return
-    onAddTopic(exam.id, t)
+    onAddTopic(exam.id, t, topicDesc)
     setTopicText('')
+    setTopicDesc('')
   }
 
   // Normalise once so a legacy/undefined topics list can never crash a render.
@@ -196,28 +209,38 @@ function ExamItem({ exam, days, onPatch, onRemove, onAddTopic, onToggleTopic, on
               {/* Syllabus checklist */}
               <div>
                 <p className="mb-1.5 text-xs font-semibold text-night-700/70 dark:text-brand-100/60">
-                  بابەتەکانی خوێندن{' '}
+                  بابەتەکانی سەعی{' '}
                   {topics.length > 0 && (
                     <span dir="ltr" className="tabular-nums">
                       ({doneCount}/{topics.length})
                     </span>
                   )}
                 </p>
-                <form onSubmit={submitTopic} className="flex gap-2">
+                <form onSubmit={submitTopic} className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      value={topicText}
+                      onChange={(e) => setTopicText(e.target.value)}
+                      dir="rtl"
+                      placeholder="بابەتێک زیاد بکە (نموونە: ڕێزمان)"
+                      className="field flex-1 !py-2 text-right"
+                    />
+                    <button
+                      type="submit"
+                      aria-label="زیادکردنی بابەت"
+                      className="flex shrink-0 items-center justify-center rounded-xl bg-brand-100 px-2.5 text-brand-700 transition active:scale-90 dark:bg-night-600 dark:text-brand-100"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
+                  {/* Optional details for the sub-topic — softer & smaller. */}
                   <input
-                    value={topicText}
-                    onChange={(e) => setTopicText(e.target.value)}
+                    value={topicDesc}
+                    onChange={(e) => setTopicDesc(e.target.value)}
                     dir="rtl"
-                    placeholder="بابەتێک زیاد بکە (نموونە: ڕێزمان)"
-                    className="field flex-1 !py-2 text-right"
+                    placeholder="وردەکاری زیاتر (ئارەزوومەندانە)…"
+                    className="field !py-2 text-right text-xs"
                   />
-                  <button
-                    type="submit"
-                    aria-label="زیادکردنی بابەت"
-                    className="flex items-center justify-center rounded-xl bg-brand-100 px-2.5 text-brand-700 transition active:scale-90 dark:bg-night-600 dark:text-brand-100"
-                  >
-                    <Plus size={18} />
-                  </button>
                 </form>
 
                 {topics.length > 0 && (
@@ -225,17 +248,17 @@ function ExamItem({ exam, days, onPatch, onRemove, onAddTopic, onToggleTopic, on
                     {topics.map((t) => (
                       <li
                         key={t.id}
-                        className={`flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors ${
+                        className={`flex items-start gap-2 rounded-xl px-2 py-1.5 transition-colors ${
                           t.done ? 'bg-green-50 dark:bg-emerald-500/10' : ''
                         }`}
                       >
                         <button
                           type="button"
                           onClick={() => onToggleTopic(exam.id, t.id)}
-                          className="flex flex-1 items-center gap-2 text-right"
+                          className="flex flex-1 items-start gap-2 text-right"
                         >
                           <span
-                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                            className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
                               t.done
                                 ? 'border-green-500 bg-green-100 text-green-600 dark:border-green-500 dark:bg-green-500/20 dark:text-green-400'
                                 : 'border-brand-300 text-transparent dark:border-night-500'
@@ -243,29 +266,43 @@ function ExamItem({ exam, days, onPatch, onRemove, onAddTopic, onToggleTopic, on
                           >
                             <Check size={12} strokeWidth={3} />
                           </span>
-                          <span
-                            className={`text-sm transition ${
-                              t.done
-                                ? 'text-gray-400 line-through dark:text-brand-100/30'
-                                : 'text-night-900 dark:text-brand-50'
-                            }`}
-                          >
-                            {t.text}
+                          <span className="min-w-0 flex-1">
+                            <span
+                              className={`block text-sm transition ${
+                                t.done
+                                  ? 'text-gray-400 line-through dark:text-brand-100/30'
+                                  : 'text-night-900 dark:text-brand-50'
+                              }`}
+                            >
+                              {topicTitle(t)}
+                            </span>
+                            {topicDescription(t) && (
+                              <span
+                                className={`mt-0.5 block text-xs transition ${
+                                  t.done
+                                    ? 'text-gray-300 line-through dark:text-brand-100/20'
+                                    : 'text-night-700/55 dark:text-brand-100/45'
+                                }`}
+                              >
+                                {topicDescription(t)}
+                              </span>
+                            )}
                           </span>
                         </button>
-                        {/* Mini-Focus — study THIS sub-topic; carries
-                            "[Subject] - [Sub-topic]" into the global timer. */}
+                        {/* Mini-Focus — study THIS sub-topic; carries the
+                            "[Subject] - [Sub-topic]" title AND its details into Focus. */}
                         <StartFocusButton
                           iconOnly
                           icon={PlayCircle}
-                          contextTitle={`${exam.subject} - ${t.text}`}
-                          className="shrink-0 rounded-lg p-1 text-brand-500 transition hover:bg-brand-100 active:scale-90 dark:text-brand-300 dark:hover:bg-night-700"
+                          contextTitle={`${exam.subject} - ${topicTitle(t)}`}
+                          contextDetail={topicDescription(t)}
+                          className="mt-0.5 shrink-0 rounded-lg p-1 text-brand-500 transition hover:bg-brand-100 active:scale-90 dark:text-brand-300 dark:hover:bg-night-700"
                         />
                         <button
                           type="button"
                           onClick={() => onRemoveTopic(exam.id, t.id)}
                           aria-label="سڕینەوە"
-                          className="shrink-0 text-night-700/30 transition hover:text-rose-500 active:scale-90 dark:text-brand-100/30"
+                          className="mt-0.5 shrink-0 text-night-700/30 transition hover:text-rose-500 active:scale-90 dark:text-brand-100/30"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -278,7 +315,7 @@ function ExamItem({ exam, days, onPatch, onRemove, onAddTopic, onToggleTopic, on
               {/* Actions */}
               <div className="flex items-center gap-2">
                 <StartFocusButton
-                  contextTitle={`ئامادەکاری بۆ تاقیکردنەوەی ${exam.subject}`}
+                  contextTitle={`سەعی بۆ تاقیکردنەوەی ${exam.subject}`}
                   className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-500 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-95"
                 />
                 <button
@@ -300,7 +337,7 @@ function ExamItem({ exam, days, onPatch, onRemove, onAddTopic, onToggleTopic, on
         open={confirmDel}
         onClose={() => setConfirmDel(false)}
         onConfirm={() => onRemove(exam.id)}
-        message="دڵنیایت لە سڕینەوەی ئەم تاقیکردنەوەیە؟"
+        message="دڵنیایت ئەم تاقیکردنەوەیە بسڕیتەوە؟"
       />
     </li>
   )
