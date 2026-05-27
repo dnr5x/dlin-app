@@ -6,6 +6,7 @@ import PageTransition from '../components/PageTransition.jsx'
 import CountdownTimer from '../components/CountdownTimer.jsx'
 import QuoteWidget from '../components/QuoteWidget.jsx'
 import LevelBar from '../components/LevelBar.jsx'
+import NowSuggestion from '../components/NowSuggestion.jsx'
 import NextExamCard from '../components/NextExamCard.jsx'
 import TodoWidget from '../components/TodoWidget.jsx'
 import StudyTracker from '../components/StudyTracker.jsx'
@@ -89,6 +90,12 @@ export default function Home() {
           </h1>
           <MoodCheck />
         </motion.header>
+
+        {/* "Right now" — the single, highest-priority study action. Quietly hides
+            itself when there's no upcoming exam to suggest. */}
+        <motion.div variants={item}>
+          <NowSuggestion />
+        </motion.div>
 
         {/* Level & XP progress (not in the requested list — kept as a top status). */}
         <motion.div variants={item}>
